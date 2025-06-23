@@ -1,5 +1,40 @@
+
 const puppeteer = require('puppeteer');
 const fs = require('fs');
+
+// Funzione per estrarre la lista dei brand da Fragrantica
+async function scrapeBrands() {
+  const url = 'https://www.fragrantica.com/designers/';
+  const browser = await puppeteer.launch({ headless: true });
+  const page = await browser.newPage();
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0 Safari/537.36');
+
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+  // Attendi che almeno un link brand sia presente
+  await page.waitForSelector('a[href^="/designers/"][href$=".html"]', { timeout: 15000 });
+
+  const brands = await page.evaluate(() => {
+    // Prendi tutti i link ai brand
+    const anchors = Array.from(document.querySelectorAll('a[href^="/designers/"][href$=".html"]'));
+    // Filtra solo quelli che hanno testo (evita duplicati e link vuoti)
+    const seen = new Set();
+    return anchors
+      .filter(a => a.textContent.trim() && !seen.has(a.textContent.trim()) && (seen.add(a.textContent.trim()) || true))
+      .map(a => ({
+        name: a.textContent.trim(),
+        url: a.href.startsWith('http') ? a.href : `https://www.fragrantica.com${a.getAttribute('href')}`
+      }));
+  });
+
+  fs.writeFileSync('brands.json', JSON.stringify(brands, null, 2));
+  console.log('✅ Lista brand salvata in brands.json');
+  await browser.close();
+}
+
+// Per eseguire lo scraping dei brand: node scraper.js brands
+if (process.argv[2] === 'brands') {
+  scrapeBrands();
+}
 
 const perfumeUrls = [
   "https://www.fragrantica.it/perfume/Mind-Games/J-adoube-76713.html",
