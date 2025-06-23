@@ -36,12 +36,19 @@ const perfumeUrls = [
           const notesDiv = h4.nextElementSibling?.querySelectorAll('div[style*="flex-direction: column"]');
           if (!notesDiv) return [];
           return Array.from(notesDiv).map(div => {
+            // Get image src
+            const img = div.querySelector('img');
+            const image = img?.getAttribute('src') || '';
+            // Get note name (as before)
             const a = div.querySelector('a');
+            let name = '';
             if (a && a.nextSibling && a.nextSibling.nodeType === Node.TEXT_NODE) {
-              return a.nextSibling.textContent.trim();
+              name = a.nextSibling.textContent.trim();
+            } else {
+              name = div.textContent.trim();
             }
-            return div.textContent.trim();
-          }).filter(Boolean);
+            return { name, image };
+          }).filter(n => n.name);
         };
 
         const topNotes = getNotes(['top notes', 'note di apertura']);

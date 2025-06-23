@@ -23,11 +23,33 @@ onMounted(async () => {
           {{ p.accords.join(', ') }}
         </div>
       </div>
-      <ul class="mt-2">
-        <li v-if="p.topNotes && p.topNotes.length">🌿 <b>Top:</b> {{ p.topNotes.join(', ') }}</li>
-        <li v-if="p.middleNotes && p.middleNotes.length">🌿 <b>Middle:</b> {{ p.middleNotes.join(', ') }}</li>
-        <li v-if="p.baseNotes && p.baseNotes.length">🌿 <b>Base:</b> {{ p.baseNotes.join(', ') }}</li>
-      </ul>
+      <div v-if="p.topNotes && p.topNotes.length" class="mt-2">
+        <b>🌿 Top:</b>
+        <div class="flex flex-wrap gap-2 mt-1">
+          <div v-for="n in p.topNotes" :key="n.name" class="flex items-center gap-1 mb-1">
+            <img v-if="n.image" :src="n.image" :alt="n.name" class="h-7 w-7 object-contain rounded" />
+            <span>{{ n.name }}</span>
+          </div>
+        </div>
+      </div>
+      <div v-if="p.middleNotes && p.middleNotes.length" class="mt-2">
+        <b>🌿 Middle:</b>
+        <div class="flex flex-wrap gap-2 mt-1">
+          <div v-for="n in p.middleNotes" :key="n.name" class="flex items-center gap-1 mb-1">
+            <img v-if="n.image" :src="n.image" :alt="n.name" class="h-7 w-7 object-contain rounded" />
+            <span>{{ n.name }}</span>
+          </div>
+        </div>
+      </div>
+      <div v-if="p.baseNotes && p.baseNotes.length" class="mt-2">
+        <b>🌿 Base:</b>
+        <div class="flex flex-wrap gap-2 mt-1">
+          <div v-for="n in p.baseNotes" :key="n.name" class="flex items-center gap-1 mb-1">
+            <img v-if="n.image" :src="n.image" :alt="n.name" class="h-7 w-7 object-contain rounded" />
+            <span>{{ n.name }}</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
