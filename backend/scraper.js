@@ -14,9 +14,7 @@ async function scrapeBrands() {
   await page.waitForSelector('a[href^="/designers/"][href$=".html"]', { timeout: 15000 });
 
   const brands = await page.evaluate(() => {
-    // Prendi tutti i link ai brand
     const anchors = Array.from(document.querySelectorAll('a[href^="/designers/"][href$=".html"]'));
-    // Filtra solo quelli che hanno testo (evita duplicati e link vuoti)
     const seen = new Set();
     return anchors
       .filter(a => a.textContent.trim() && !seen.has(a.textContent.trim()) && (seen.add(a.textContent.trim()) || true))
@@ -26,8 +24,67 @@ async function scrapeBrands() {
       }));
   });
 
-  fs.writeFileSync('brands.json', JSON.stringify(brands, null, 2));
-  console.log('✅ Lista brand salvata in brands.json');
+  // Lista brand di nicchia
+  const nicheBrands = [
+    "Amouage",
+    "Creed",
+    "Byredo",
+    "Serge Lutens",
+    "Nasomatto",
+    "Xerjoff",
+    "Parfums de Marly",
+    "Maison Francis Kurkdjian",
+    "Frederic Malle",
+    "Orto Parisi",
+    "Montale",
+    "Mancera",
+    "Diptyque",
+    "By Kilian",
+    "Tiziana Terenzi",
+    "Clive Christian",
+    "Nishane",
+    "Initio Parfums Prives",
+    "Penhaligon's",
+    "Etat Libre d’Orange",
+    "Memo Paris",
+    "Juliette Has A Gun",
+    "BDK Parfums",
+    "Ex Nihilo",
+    "Maison Crivelli",
+    "Ormonde Jayne",
+    "Masque Milano",
+    "HFC (Haute Fragrance Company)",
+    "Atelier Cologne",
+    "Laboratorio Olfattivo",
+    "Francesca Bianchi",
+    // Nuovi brand di nicchia
+    "Bond No 9",
+    "BORNTOSTANDOUT®",
+    "Comme des Garcons",
+    "DS&Durga",
+    "Escentric Molecules",
+    "Essential Parfums",
+    "Goldfield & Banks Australia",
+    "Imaginary Authors",
+    "L'Artisan Parfumeur",
+    "Le Labo",
+    "Les Liquides Imaginaires",
+    "Lorenzo Pazzaglia",
+    "Marc-Antoine Barrois",
+    "Matiere Premiere",
+    "Maison Martin Margiela",
+    "Phlur",
+    "Roja Dove",
+    "Stéphane Humbert Lucas 777",
+    "Vilhelm Parfumerie",
+    "Zoologist Perfumes"
+  ];
+
+  // Filtra solo i brand di nicchia
+  const filtered = brands.filter(b => nicheBrands.some(n => b.name.toLowerCase() === n.toLowerCase()));
+
+  fs.writeFileSync('brands.json', JSON.stringify(filtered, null, 2));
+  console.log('✅ Lista brand di nicchia salvata in brands.json');
   await browser.close();
 }
 
