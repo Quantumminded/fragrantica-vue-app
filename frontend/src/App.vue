@@ -10,7 +10,6 @@ onMounted(async () => {
 
 <template>
   <div class="grid grid-cols-2 gap-4 p-6">
-    hey
     <div v-for="p in perfumes" :key="p.title" class="border p-4 rounded shadow">
       <h2 class="text-xl font-bold">{{ p.title }}</h2>
       <p class="text-sm text-gray-600">{{ p.brand }}</p>
