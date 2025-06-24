@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { scrapeBrandDetails } = require('./scraper');
+const { scrapeBrandDetails, scrapePerfumeDetails } = require('./scraper');
 
 const perfumes = require('./perfumes.json');
 const brands = require('./brands.json');
@@ -14,6 +14,18 @@ app.get('/api/perfumes', (req, res) => {
 
 app.get('/api/brands', (req, res) => {
   res.json(brands);
+});
+
+// API endpoint to get details for a single perfume by url (encoded)
+app.get('/api/perfume', async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.status(400).json({ error: 'Missing url parameter' });
+  try {
+    const details = await scrapePerfumeDetails(url);
+    res.json(details);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to scrape perfume details', details: e.message });
+  }
 });
 
 // API endpoint to get details for a specific brand by name

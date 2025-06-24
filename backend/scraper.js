@@ -1,3 +1,78 @@
+// Scrape details for a single perfume page
+async function scrapePerfumeDetails(url) {
+  const puppeteer = require('puppeteer');
+  const browser = await puppeteer.launch({ headless: true });
+  const page = await browser.newPage();
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0 Safari/537.36');
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+  await page.waitForSelector('h1', { timeout: 15000 });
+
+  const data = await page.evaluate(() => {
+    // Title and brand extraction
+    const title = document.querySelector('[itemprop="name"]')?.innerText.trim() || '';
+    const brand = document.querySelector('[itemprop="brand"] a span')?.innerText.trim() || '';
+    // Main image
+    const imgEl = document.querySelector('picture img[itemprop="image"]');
+    const image = imgEl?.getAttribute('src') || '';
+    // Description (if available)
+    let description = '';
+    const descEl = document.querySelector('.cell.medium-8 .text, .cell.medium-8 .text-content, .cell.medium-8 .text_block');
+    if (descEl) description = descEl.innerText.trim();
+
+    // Helper to extract notes by section (supports English and Italian)
+    const getNotes = (sectionTitles) => {
+      const h4 = Array.from(document.querySelectorAll('h4')).find(
+        el => sectionTitles.some(title => el.textContent.trim().toLowerCase().includes(title))
+      );
+      if (!h4) return [];
+      const notesDiv = h4.nextElementSibling?.querySelectorAll('div[style*="flex-direction: column"]');
+      if (!notesDiv) return [];
+      return Array.from(notesDiv).map(div => {
+        // Get image src
+        const img = div.querySelector('img');
+        const image = img?.getAttribute('src') || '';
+        // Get note name
+        const a = div.querySelector('a');
+        let name = '';
+        if (a && a.nextSibling && a.nextSibling.nodeType === Node.TEXT_NODE) {
+          name = a.nextSibling.textContent.trim();
+        } else {
+          name = div.textContent.trim();
+        }
+        return { name, image };
+      }).filter(n => n.name);
+    };
+
+    const topNotes = getNotes(['top notes', 'note di apertura']);
+    const middleNotes = getNotes(['middle notes', 'note centrali']);
+    const baseNotes = getNotes(['base notes', 'note di base']);
+
+    // If no top/middle/base notes, try to get generic notes
+    let notes = [];
+    if (!topNotes.length && !middleNotes.length && !baseNotes.length) {
+      // Look for generic notes section (notes-box or similar)
+      const notesBox = document.querySelector('.notes-box');
+      if (notesBox) {
+        notes = Array.from(notesBox.parentElement?.querySelectorAll('div[style*="flex-direction: column"]') || []).map(div => {
+          const img = div.querySelector('img');
+          const image = img?.getAttribute('src') || '';
+          const name = div.textContent.trim();
+          return { name, image };
+        }).filter(n => n.name);
+      }
+    }
+
+    // Extract accords
+    const accordEls = document.querySelectorAll('.accord-box .accord-bar');
+    const accords = Array.from(accordEls).map(el => el.innerText.trim()).filter(Boolean);
+
+    return { title, brand, image, description, topNotes, middleNotes, baseNotes, notes, accords };
+  });
+  await browser.close();
+  return data;
+}
+
+module.exports.scrapePerfumeDetails = scrapePerfumeDetails;
 // Scrape details for a single brand page: name, logo, country
 async function scrapeBrandDetails(url) {
   const puppeteer = require('puppeteer');
@@ -117,7 +192,7 @@ async function scrapeBrands() {
     // "Parfums de Marly",
     // "Maison Francis Kurkdjian",
     // "Frederic Malle",
-    "Orto Parisi",
+    // "Orto Parisi",
     // "Montale",
     // "Mancera",
     // "Diptyque",
@@ -170,9 +245,44 @@ async function scrapeBrands() {
   await browser.close();
 }
 
+
 // Per eseguire lo scraping dei brand: node scraper.js brands
 if (process.argv[2] === 'brands') {
   scrapeBrands();
+}
+
+// Per eseguire lo scraping dei dettagli di tutti i profumi: node scraper.js perfumes
+if (process.argv[2] === 'perfumes') {
+  (async () => {
+    const fs = require('fs');
+    const path = require('path');
+    const { scrapePerfumeDetails } = require('./scraper');
+    const brandsDetails = require('./brands_details.json');
+    const allPerfumeUrls = [];
+    for (const brand of brandsDetails) {
+      if (brand.collections) {
+        for (const collectionName in brand.collections) {
+          for (const perfume of brand.collections[collectionName]) {
+            if (perfume.url) allPerfumeUrls.push(perfume.url);
+          }
+        }
+      }
+    }
+    const results = [];
+    for (const url of allPerfumeUrls) {
+      try {
+        console.log('Scraping:', url);
+        const details = await scrapePerfumeDetails(url);
+        results.push({ url, ...details });
+      } catch (e) {
+        console.error('Failed to scrape', url, e.message);
+        results.push({ url, error: e.message });
+      }
+      await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000));
+    }
+    fs.writeFileSync(path.join(__dirname, 'perfumes_details.json'), JSON.stringify(results, null, 2));
+    console.log('✅ All perfume details saved to perfumes_details.json');
+  })();
 }
 
 const perfumeUrls = [

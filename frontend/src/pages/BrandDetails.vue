@@ -19,6 +19,12 @@
             <img v-if="p.image" :src="p.image" :alt="p.name" class="h-24 w-full object-contain mb-2" />
             <div class="font-bold">{{ p.name }}</div>
             <div class="text-xs text-gray-500">{{ p.gender }} <span v-if="p.year">| {{ p.year }}</span></div>
+            <router-link
+              :to="{ name: 'perfume', query: { url: p.url } }"
+              class="text-blue-600 underline text-xs mr-2"
+            >
+              View Details
+            </router-link>
             <a :href="p.url" target="_blank" class="text-blue-600 underline text-xs">View on Fragrantica</a>
           </div>
         </div>
