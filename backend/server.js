@@ -1,3 +1,18 @@
+const { scrapeBrandDetails } = require('./scraper');
+// API endpoint to get details for a specific brand by name
+app.get('/api/brand/:name', async (req, res) => {
+  const brandName = decodeURIComponent(req.params.name);
+  const brand = brands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
+  if (!brand) {
+    return res.status(404).json({ error: 'Brand not found' });
+  }
+  try {
+    const details = await scrapeBrandDetails(brand.url);
+    res.json(details);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to scrape brand details', details: e.message });
+  }
+});
 const express = require('express');
 const cors = require('cors');
 

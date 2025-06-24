@@ -1,3 +1,41 @@
+// Scrape details for a single brand page: name, logo, country
+async function scrapeBrandDetails(url) {
+  const puppeteer = require('puppeteer');
+  const browser = await puppeteer.launch({ headless: true });
+  const page = await browser.newPage();
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0 Safari/537.36');
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+  await page.waitForSelector('h1, h2', { timeout: 15000 });
+
+  const data = await page.evaluate(() => {
+    // Brand name
+    const name = document.querySelector('h1, h2')?.innerText.trim() || '';
+    // Brand logo
+    const logo = document.querySelector('.cell.small-4.medium-12 img')?.getAttribute('src') || '';
+    // Country name
+    let country = '';
+    let website = '';
+    const countryLabel = Array.from(document.querySelectorAll('.cell.small-7.small-offset-1.medium-12, .cell.medium-12')).find(div => div.innerHTML.includes('Country:'));
+    if (countryLabel) {
+      const match = countryLabel.innerHTML.match(/Country:\s*<a [^>]*><b>([^<]+)<\/b><\/a>/);
+      if (match) country = match[1].trim();
+      const websiteMatch = countryLabel.innerHTML.match(/Brand website:\s*<a [^>]*href=["']([^"']+)["']/);
+      if (websiteMatch) website = websiteMatch[1].trim();
+    }
+    // Brand description
+    let description = '';
+    const descDiv = document.querySelector('.cell.small-12.medium-8 #descAAA');
+    if (descDiv) {
+      // Get all <p> inside the description div and join them
+      description = Array.from(descDiv.querySelectorAll('p')).map(p => p.innerText.trim()).join('\n\n');
+    }
+    return { name, logo, country, website, description };
+  });
+  await browser.close();
+  return data;
+}
+
+module.exports.scrapeBrandDetails = scrapeBrandDetails;
 
 const puppeteer = require('puppeteer');
 const fs = require('fs');
@@ -26,58 +64,58 @@ async function scrapeBrands() {
 
   // Lista brand di nicchia
   const nicheBrands = [
-    "Amouage",
-    "Creed",
-    "Byredo",
-    "Serge Lutens",
+    // "Amouage",
+    // "Creed",
+    // "Byredo",
+    // "Serge Lutens",
     "Nasomatto",
-    "Xerjoff",
-    "Parfums de Marly",
-    "Maison Francis Kurkdjian",
-    "Frederic Malle",
-    "Orto Parisi",
-    "Montale",
-    "Mancera",
-    "Diptyque",
-    "By Kilian",
-    "Tiziana Terenzi",
-    "Clive Christian",
-    "Nishane",
-    "Initio Parfums Prives",
-    "Penhaligon's",
-    "Etat Libre d’Orange",
-    "Memo Paris",
-    "Juliette Has A Gun",
-    "BDK Parfums",
-    "Ex Nihilo",
-    "Maison Crivelli",
-    "Ormonde Jayne",
-    "Masque Milano",
-    "HFC (Haute Fragrance Company)",
-    "Atelier Cologne",
-    "Laboratorio Olfattivo",
-    "Francesca Bianchi",
-    // Nuovi brand di nicchia
-    "Bond No 9",
-    "BORNTOSTANDOUT®",
-    "Comme des Garcons",
-    "DS&Durga",
-    "Escentric Molecules",
-    "Essential Parfums",
-    "Goldfield & Banks Australia",
-    "Imaginary Authors",
-    "L'Artisan Parfumeur",
-    "Le Labo",
-    "Les Liquides Imaginaires",
-    "Lorenzo Pazzaglia",
-    "Marc-Antoine Barrois",
-    "Matiere Premiere",
-    "Maison Martin Margiela",
-    "Phlur",
-    "Roja Dove",
-    "Stéphane Humbert Lucas 777",
-    "Vilhelm Parfumerie",
-    "Zoologist Perfumes"
+    // "Xerjoff",
+    // "Parfums de Marly",
+    // "Maison Francis Kurkdjian",
+    // "Frederic Malle",
+    // "Orto Parisi",
+    // "Montale",
+    // "Mancera",
+    // "Diptyque",
+    // "By Kilian",
+    // "Tiziana Terenzi",
+    // "Clive Christian",
+    // "Nishane",
+    // "Initio Parfums Prives",
+    // "Penhaligon's",
+    // "Etat Libre d’Orange",
+    // "Memo Paris",
+    // "Juliette Has A Gun",
+    // "BDK Parfums",
+    // "Ex Nihilo",
+    // "Maison Crivelli",
+    // "Ormonde Jayne",
+    // "Masque Milano",
+    // "HFC (Haute Fragrance Company)",
+    // "Atelier Cologne",
+    // "Laboratorio Olfattivo",
+    // "Francesca Bianchi",
+    // // Nuovi brand di nicchia
+    // "Bond No 9",
+    // "BORNTOSTANDOUT®",
+    // "Comme des Garcons",
+    // "DS&Durga",
+    // "Escentric Molecules",
+    // "Essential Parfums",
+    // "Goldfield & Banks Australia",
+    // "Imaginary Authors",
+    // "L'Artisan Parfumeur",
+    // "Le Labo",
+    // "Les Liquides Imaginaires",
+    // "Lorenzo Pazzaglia",
+    // "Marc-Antoine Barrois",
+    // "Matiere Premiere",
+    // "Maison Martin Margiela",
+    // "Phlur",
+    // "Roja Dove",
+    // "Stéphane Humbert Lucas 777",
+    // "Vilhelm Parfumerie",
+    // "Zoologist Perfumes"
   ];
 
   // Filtra solo i brand di nicchia
