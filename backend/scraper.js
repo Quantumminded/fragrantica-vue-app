@@ -29,7 +29,51 @@ async function scrapeBrandDetails(url) {
       // Get all <p> inside the description div and join them
       description = Array.from(descDiv.querySelectorAll('p')).map(p => p.innerText.trim()).join('\n\n');
     }
-    return { name, logo, country, website, description };
+
+    // Perfumes grouped by collection from #brands
+    let collections = {};
+    const brandsSection = document.getElementById('brands');
+    if (brandsSection) {
+      let currentCollection = '';
+      let collectionPerfumes = [];
+      const children = Array.from(brandsSection.children);
+      for (let i = 0; i < children.length; i++) {
+        const el = children[i];
+        // Detect collection header
+        if (el.tagName === 'DIV' && el.classList.contains('cell') && el.querySelector('h2')) {
+          // Save previous collection if any
+          if (currentCollection && collectionPerfumes.length) {
+            collections[currentCollection] = collectionPerfumes;
+          }
+          currentCollection = el.querySelector('h2').innerText.trim();
+          collectionPerfumes = [];
+        }
+        // Detect perfume entry
+        if (el.classList.contains('cell') && el.classList.contains('text-left') && el.classList.contains('prefumeHbox')) {
+          const div = el;
+          const a = div.querySelector('h3 a');
+          const name = a?.innerText.trim() || '';
+          const url = a ? (a.href.startsWith('http') ? a.href : `https://www.fragrantica.com${a.getAttribute('href')}`) : '';
+          let image = div.querySelector('.show-for-medium img')?.getAttribute('src') || '';
+          if (!image) image = div.querySelector('.hide-for-medium img')?.getAttribute('src') || '';
+          let gender = '', year = '';
+          const infoSpans = div.querySelectorAll('.flex-container.align-justify:last-of-type span');
+          if (infoSpans.length) {
+            gender = infoSpans[0]?.innerText.trim() || '';
+            year = infoSpans[1]?.innerText.trim() || '';
+          }
+          if (name && url) {
+            collectionPerfumes.push({ name, url, image, gender, year });
+          }
+        }
+      }
+      // Save last collection
+      if (currentCollection && collectionPerfumes.length) {
+        collections[currentCollection] = collectionPerfumes;
+      }
+    }
+
+    return { name, logo, country, website, description, collections };
   });
   await browser.close();
   return data;
@@ -73,7 +117,7 @@ async function scrapeBrands() {
     // "Parfums de Marly",
     // "Maison Francis Kurkdjian",
     // "Frederic Malle",
-    // "Orto Parisi",
+    "Orto Parisi",
     // "Montale",
     // "Mancera",
     // "Diptyque",
